@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import httpx
 import os
 from dotenv import load_dotenv
-
+#gets key from .env and sets region
 load_dotenv()
 RIOT_API_KEY = os.getenv("RIOT_API_KEY")
 REGION_ROUTING = "europe"
@@ -19,6 +19,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 print("Using Riot API key:", RIOT_API_KEY)
+#above is to find errors in API key
 
 @app.get("/account")
 async def get_account(gameName: str = Query(..., description="Riot ID (in-game name)"),
