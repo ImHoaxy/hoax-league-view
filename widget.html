@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>rat#hoax - LoL Profile Widget</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body {
+      background-color: #1e1e2e;
+      color: #cdd6f4;
+      font-family: 'Segoe UI', sans-serif;
+      padding: 1rem;
+      max-width: 360px;
+      margin: auto;
+    }
+    .card {
+      background: #313244;
+      padding: 1rem;
+      border-radius: 1rem;
+      box-shadow: 0 0 10px #0008;
+    }
+    .icon {
+      border-radius: 50%;
+      border: 2px solid #b4befe;
+      width: 80px;
+      height: 80px;
+      display: block;
+      margin: 0 auto;
+    }
+    h2, h3 {
+      text-align: center;
+      margin: 0.5rem 0 0.2rem;
+      color: #b4befe;
+    }
+    .rank {
+      text-align: center;
+      font-weight: bold;
+      color: #a6e3a1;
+      margin-bottom: 1rem;
+    }
+    .match {
+      background: #1e1e2e;
+      margin-top: 0.5rem;
+      padding: 0.5rem;
+      border-radius: 0.5rem;
+      font-size: 0.9rem;
+    }
+    .win {
+      color: #a6e3a1;
+    }
+    .loss {
+      color: #f38ba8;
+    }
+    #error {
+      color: #f38ba8;
+      text-align: center;
+      margin-top: 1rem;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <img id="icon" class="icon" src="" alt="Summoner Icon" />
+    <h2 id="summonerName">Loading...</h2>
+    <div id="rankInfo" class="rank">Loading Rank...</div>
+
+    <h3>Last 3 Matches</h3>
+    <div id="matches"></div>
+
+    <div id="error"></div>
+  </div>
+
+<script>
+  // Your Riot ID and Tagline here:
+  const gameName = "rat";
+  const tagLine = "hoax";
+
+  const apiBase = "http://localhost:8000";
+
+  async function fetchProfile() {
+    try {
+      const res = await fetch(`${apiBase}/account?gameName=${encodeURIComponent(gameName)}&tagLine=${encodeURIComponent(tagLine)}`);
+      if (!res.ok) {
+        const err = await res.text();
+        throw new Error(`API error: ${err}`);
+      }
+      const data = await res.json();
+
+      // Summoner icon and name
+      document.getElementById("icon").src =
+        `https://ddragon.leagueoflegends.com/cdn/14.13.1/img/profileicon/${data.summoner.profileIconId}.png`;
+      document.getElementById("summonerName").textContent = `${data.summoner.name}`;
+
+      // Rank
+      const soloQ = data.ranks.find(r => r.queueType === "RANKED_SOLO_5x5");
+      document.getElementById("rankInfo").textContent = soloQ ?
+        `${soloQ.tier} ${soloQ.rank} - ${soloQ.leaguePoints} LP` :
+        "Unranked";
+
+      // Matches
+      const matchesEl = document.getElementById("matches");
+      matchesEl.innerHTML = "";
+      data.matches.forEach(match => {
+        const participant = match.info.participants.find(p => p.puuid === data.summoner.puuid);
+        if (participant) {
+          const div = document.createElement("div");
+          div.className = "match";
+          div.innerHTML = `
+            <strong>${participant.championName}</strong> - ${participant.kills}/${participant.deaths}/${participant.assists} - 
+            <span class="${participant.win ? 'win' : 'loss'}">${participant.win ? 'Win' : 'Loss'}</span>
+          `;
+          matchesEl.appendChild(div);
+        }
+      });
+      document.getElementById("error").textContent = "";
+    } catch (e) {
+      document.getElementById("error").textContent = e.message;
+      document.getElementById("summonerName").textContent = "Error loading profile";
+      document.getElementById("rankInfo").textContent = "";
+      document.getElementById("matches").innerHTML = "";
+    }
+  }
+
+  fetchProfile();
+</script>
+</body>
+</html>
